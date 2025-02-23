@@ -1,0 +1,21 @@
+    Processing in control: b ./code_sample.rb:3
+    <breakpointAdded
+        no="1"
+        location="./code_sample.rb:3"
+    />
+
+    Executing command: var
+    <variables>
+        <variable name="greeting" kind="local" type="String" hasChildren="true" objectId="+0x6cc" size="17">
+            <value>
+                <![CDATA[Hello EuRuKo2024!]]>
+            </value>
+        </variable>
+    </variables>
+
+
+
+
+
+
+
