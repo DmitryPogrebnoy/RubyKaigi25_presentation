@@ -1,5 +1,5 @@
 require 'pd'
-PutsDebuggerer.app_path = "/Users/dmitry.pogrebnoy/Desktop/EuRuKo24_presentation/src/presentation_samples/1_example_with_bug/"
+PutsDebuggerer.app_path = "/Users/dmitry.pogrebnoy/Desktop/RubyKaigi2025_presentation/src/presentation_samples/1_example_with_bug/"
 
 def process(thing)
   pd "Debug print 1: " + (defined? thing.to_s).to_s

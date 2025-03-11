@@ -4,8 +4,8 @@ class ConferenceEvent
 end
 
 event = ConferenceEvent.new
-event.name = "EuRuKo"
-event.year = "2024"
+event.name = "RubyKaigi"
+event.year = "2025"
 
 event
 

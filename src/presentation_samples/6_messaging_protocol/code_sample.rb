@@ -1,5 +1,5 @@
 def say_hello
-  greeting = "Hello EuRuKo2024!"
+  greeting = "Hello RubyKaigi2025!"
   puts greeting
 end
 

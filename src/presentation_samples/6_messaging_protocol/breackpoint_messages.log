@@ -8,7 +8,7 @@
     <variables>
         <variable name="greeting" kind="local" type="String" hasChildren="true" objectId="+0x6cc" size="17">
             <value>
-                <![CDATA[Hello EuRuKo2024!]]>
+                <![CDATA[Hello RubyKaigi2025!]]>
             </value>
         </variable>
     </variables>
