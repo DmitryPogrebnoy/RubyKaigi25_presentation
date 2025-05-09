@@ -1,0 +1,431 @@
+Slide 1
+
+Hello! Thank you all for coming. My name is Dmitry Pogrebnoy, I’m a team leader of RubyMine Team in JetBrains.
+
+Today I will talk about Ruby debuggers. We debug our code quite a lot in our daily work, right? And we use all sorts of tools to investigate problems in code. I bet almost all of us faced the case when we have to fight with ruby debugger to adjust it and make it does what we need.
+
+In this talk I will show you Ruby debuggers internals and fundamental technologies behind them. I will cover open source Ruby debuggers as well as RubyMine debugger. I've been working on the RubyMine debugger for several years and have been investigating how things work in open source debuggers. So today I will share a part of my experience and show you the main concepts of Ruby debugger internals. So let’s start.
+
+Slide 2
+
+During this talk I will answer five questions about Ruby debuggers. Here they are on the screen. Firstly, we will take a small overview and see what debugging tools we have at our disposal to find bugs in Ruby code.
+
+Slide 3
+
+Then we will discuss technologies that are used by Ruby debuggers.
+
+Slide 4
+
+After that we will see how debuggers work internally.
+
+Slide 5
+
+Then we will figure out what debugger is the most performant.
+
+Slide 6
+
+And finally I will show you several unique features of RubyMine debugger that makes debugging easier.
+
+Slide 7
+
+Let’s start from the first question, what tools do we have to find bugs in Ruby code?
+
+Slide 8
+
+Let's start with example. Here is a sample of code with method process. This method takes one argument and checks whether this argument has to_string or inspect methods. If yes, then it prints a message “Element is printable”. Otherwise, it prints a message "Element is not printable".
+
+At the bottom we can see two calls of this method with their outputs in comments.
+
+The first call with argument five produce a message "Element is printable", that is great.
+
+Slide 9
+
+But the second call looks suspicious. It takes BasicObject, but it prints "Element is printable". It’s not correct, because BasicObject doesn’t have any of required methods. So apparently this code has a bug.
+
+Let’s think for a second about that.
+
+Please raise your hand if you spot a bug in the method process.
+Raise your hand if you know where the problem is in this code! Don't worry, I will show the answer on the next slide.
+
+Well done, most of us did spot the bug.
+
+Slide 10
+
+So the answer is on the slide. We have a problem in if condition. The problem is that this highlighted code goes as an argument to defined method and condition doesn’t work as it should and returns true regardless of the argument. The fix for that problem is pretty simple.
+
+Slide 11
+
+We need to add just a couple of parentheses and after that all things will work as they should.
+
+Slide 12
+
+And here we can see the right output from the call with BasicObject. All good.
+
+Slide 13
+
+As you saw, it was almost obvious example, but what tools could we use to find real bugs in real Ruby code.
+
+Slide 14
+
+The first things that comes in mind is puts statement. We could place them in a source code, and it might give us some hints about where the problem is.
+
+Slide 15
+
+In the same way we can use puts debugger, which makes the output messages more distinguishable between each other as we can see it on the example.
+
+Also, we could use awesome_print gem and similar ones to make our messages more structured and easy to read.
+
+Generally, puts statements are mostly a fallback option, they are just to basic. Usually we need something more advanced.
+
+Slide 16
+
+The next level of tools is interactive consoles. You definitely know main consoles. They are IRB and Pry. Consoles still require modifying the source code of your program to make them work. But at the same time, they allow you to introspect the context of your program, modify it and evaluate some expressions.
+
+Interactive consoles are great, but they lack of one important feature. They lack of execution control. They lack of stepping.
+
+Slide 17
+
+So the next type of tool and the most advanced ones is Debugger. It has all features from interactive consoles, but also it has execution control and stepping.
+
+Slide 18
+
+Before we start with debuggers, let’s think for a second how often Ruby developers use debugger.
+
+Slide 19
+
+So actually every third run is a debug run. According to the stats from RubyMine, thirty-four percents of all runs are debug runs. It's a huge part of our work right? That's why I'm talking here about the debuggers, the better we know their features and how they work internally - the more efficient we are in our daily work.
+
+Slide 20
+
+So let's start diving into debuggers internall and see what technologies lay behind Ruby debuggers.
+
+Slide 21-25
+
+Let’s start from the Trace Point. It was introduced a lot of years ago  in Ruby 2 and was designed to execute arbitrary code, when specific event appears in runtime in your code. Also, it works in ruby threads and fibers, but doesn’t work in Ractor yet. So TracePoint is a core thing powering every ruby debugger.
+
+Slide 26
+
+Let’s take a loot at the example and see how TracePoint works. Here we have a tracepoint targeted on a call event. In tracepoint block we just print a message with current method id. At the bottom we can see the output. So tracepoint was triggered inside say_hello method only once and that is why we have calling method message in output. That is basically how it works.
+
+Slide 27
+
+Having only tracepoints we can create the simplest possible debugger. Here we have almost the same code, but with adjusted TracePoint body.
+
+Slide 28
+
+In this TracePoint we get an input from the user and try to evaluate it inside the current context and print the result. So in that way we will be able to introspect current context and even modify the current state on every method invocation. Really powerful thing right?
+
+So the TracePoint is one of the core parts of any ruby debugger, it’s not possible to build ruby debugger without it.
+
+So we got some things about TracePoint, let's move to the next technology.
+
+Slide 29
+
+And the next important thing is Instruction Sequence, iseq in short!
+
+Slide 30-32
+
+Essentially, instruction sequence is a representation of bytecode for Ruby virtual machine.
+
+It is tightly coupled with virtual machine and depends on Ruby version. So the same Ruby could be converted into different iseqs, even their structure could be different.
+
+Generally speaking, Instruction Sequence provides access to low-level representation of Ruby code! Basically you can manipulate flags, iseqs structure and other things from C extensions and make some dirty hacks without changing your source code on Ruby.
+
+Let's take a look at the example to understand how it works.
+
+Slide 33
+
+Here is an example how we can obtain and print iseq of some method right in the Ruby code. So here we pass a method object to the method of InstructionSequence class and after that we call disasm method that returns string representation of our iseq.
+
+Slide 34
+
+The output from the previous slide looks like this. Here we have several lines, they are pretty readable.
+
+Slide 35
+
+We can see the argument of puts call without decoding problems. It is “Hello RubyKaigi”.
+
+Slide 36
+
+Also, we can see here events that TracePoints use. Here we have Li stands for line event, Ca for call event and Re for return event. If we run this code, then corresponding events will be emitted in runtime at certain instruction and related tracepoints will be triggered. In that way TracePoint and Instruction sequence works together and allow us building debuggers on top of that.
+
+Slide 37
+
+We discussed two main parts of ruby debuggers, and now it's time to see how these components are used! So finally Ruby Debugger!
+
+Slide 38-42
+
+Let's start with well known Byebug debugger.
+
+As any other ruby debugger, this debugger has breakpoints, stepping and context introspection.
+It is a default debugging option for old Ruby and Rails versions.
+
+As well as interactive consoles it requires modification in your source code to trigger and start the debugger at the right place.
+
+And it has CLI as a default interface, but also there are several VSCode extensions of different quality so we can use them if we need.
+
+Slide 43
+
+Let’s take a look how Byebug debugger works.
+
+Slide 44
+
+Here is a simple model how ByeBug works. This code executes before any code of target application. Let’s take a look in details.
+
+Slide 45
+
+In essence byebug has list of breakpoints and list of tracepoints. Each tracepoint targeted to one specific event such as line, call, return or other types of events.
+
+Slide 46
+
+In every tracepoint it checks that breakpoint exists at the certain place. If we found a breakpoint, then byebug handle it and gives control to the user. Otherwise, then it continues execution until the next event.
+
+As you might guess, such an approach leads to a lot of checks on each event. And consequently such high number of checks drastically affects performance of debugging.
+
+Slide 47
+
+For this reason code under byebug debugger executes more than ten times slower than original code without debugger. And it makes it almost unusable for complex Rails applications in the real world.
+
+This is a painful disadvantage of byebug debugger. Our next debugger completely solved this problem, but only for modern Ruby versions.
+
+Slide 48
+
+And yes, the next debugger is debug gem.
+
+Slide 49-51
+
+The all magic behind performance improvements in debug gem are related to TracePoint update that was released in Ruby 2.6.
+
+This improvement gave us the ability to target a TracePoint directly to a line of code or to the particular instruction sequence.
+
+And that solved the main performance problem! With that approach you don’t need to check breakpoint presence on every event. You can target a tracepoint to a place where you have a breakpoint for sure.
+
+Slide 52
+
+Let me show an example how it works! This is almost the same example, but now with two methods.
+
+Slide 53
+
+Here is a main difference from previous version. Now we target tracepoint for a certain iseq.
+
+Slide 54
+
+And at the bottom we have an output. We can see that our tracepoint was triggered only once for the first method and was ignored for the second one. That a simplified example how TracePoint is used in debug gem.
+
+Slide 55-58
+
+So at this point we got that debug gem uses improved TracePoints to overcome performance penalty.
+
+Debug gem works only for the modern Ruby, because TracePoint improvement wasn't ported to older Ruby versions.
+
+Other than performance fixes, debug gem supports different frontends like Chrome or VS Code. And that is also improved debugger usability.
+
+And finally debug gem is bundled to modern Ruby. Now it’s de facto a default option for debugging ruby code if you don't have RubyMine debugger.
+
+Slide 59
+
+That was a short story about debug gem. We already discussed byebug and debug gem. Let’s take a look what RubyMine Debugger offers.
+
+Slide 60-64
+
+First of all, RubyMine debugger is bundled in RubyMine IDE with smooth graphical user interface. It makes debugging process convenient and effective.
+
+Also, RubyMine provides seamless debugging experience. With this debugger just need to click on debug button in the IDE and that is it. You don't need to configure things, don't need to change your source code or write special commands to run the debugger. It works out of the box with only one click on the debug button. And it works even with production complex Rails application.
+
+RubyMine debugger supports almost all ruby versions that your application could use.
+
+And it doesn’t have performance penalty even on Ruby versions less than 2.7 where TracePoint improvements are not available. So it works fast in any case.
+
+And finally, RubyMine debugger can be attached to any Ruby process. So you don’t need to run your application with debugger from the start, you can attach debugger to it when it is really necessary. And of course it works with Rails without any additional configuration.
+
+Slide 65
+
+So now we know that RubyMine Debugger is a cool tool and probably the primary way for debugging ruby applications. But what is actually RubyMine debugger? Let’s take a look into details.
+
+Slide 66
+
+Essentially RubyMine Debugger contains three parts.
+
+Slide 67
+
+The first part is debase gem. It is a backend of RubyMine debugger, and it is responsible for low-level things like context and frame retrieving, manipulating with instruction sequences and other low-level things that require to be in C extension.
+
+Slide 68
+
+The next part is ruby-debug-ide gem. It is internal debugger frontend. It is responsible for connection with RubyMine, message handling and building text representation of ruby values for RubyMine tool window.
+
+Slide 69
+
+And finally Rubymine IDE itself. The main point of this component is a smooth debugger user interface. Also, it is responsible for sending commands to debugger frontend and for handling responses from the debugger.
+
+In that way every component is responsible for certain things. This structure decrease complexity of entire system and allow to develop each component independently.
+
+This is a high level model of RubyMine debugger, right?
+
+Slide 70
+
+But in reality we have that model. So we have two separate branches of debugger gems.
+
+Slide 71
+
+The first is for Ruby versions less than 3. These gems use old Ruby API and some tricky hacks to achieve great performance even without TracePoint improvements.
+
+Slide 72
+
+And the second line of debugger gems is intended for modern Ruby versions, where we have all modern API including TracePoint improvements. The implementation of these gems are much simpler than gems for old Rubies. It makes it easier to maintain and add new features to the debugger.
+
+Slide 73
+
+Now we already know some things about Ruby debuggers and about how they work. Let's figure out which debugger is the most important?
+
+Slide 74
+
+To figure out this question I created an experiment. I used simple fibonacci method and placed one meaningless breakpoint to measure, how set breakpoint affects performance of particular debugger.
+
+Also, I used average metric of one hundred runs to make results stable.
+
+Slide 75
+
+In my experiment I used all ruby debuggers that we already described and their latest available versions. There are two pack for RubyMine Debugger, one for old ruby and one for modern ruby version. So let’s take a look on results.
+
+Slide 76
+
+Here they are.
+
+Slide 77
+
+First of all, let’s notice that byebug is really slow. It’s more than 20 times slower, than original code without debug.
+
+Slide 78
+
+On the other hand, RubyMine debugger works without performance penalty. As we can see, if you have some application on old Ruby, typical production application, then de facto you have only one option to debug it effectively. And having only one option is not really great, but that is what we have. So RubyMine is the only real option here.
+
+Slide 79
+
+The state is much better for modern Ruby versions. Here we can see that both debug gem and RubyMine debugger doesn’t have performance issues and here we have two potential options. We can choose one of them or both for a particular case. That is really great I think.
+
+Slide 80
+
+So we investigated debuggers performance and chose best options for each case. And we have only one question left. So let’s see how RubyMine Debugger can help you debug your code more effectively.
+
+Generally there are a lot of features in RubyMine that should be mentioned, but I would like to show you only three of them.
+
+Slide 81
+
+The first feature is debugging Rails application in one click. Let’s see what it is.
+
+Slide 82
+
+Let’s say we have a ordinary Rails application based on puma server.
+
+Slide 83
+
+Here we can see puma config with 5 threads and 2 workers. It means that we work with multi-process application.
+
+Slide 84
+
+Suppose we need to debug this application. Let's say we need to debug controller method with name home.
+
+Slide 85
+
+First we need to click on the gutter to place a breakpoint.
+
+Slide 86
+
+And after that all we need is to start debugging. So we just need to click on the debug button at top right corner and that’s it.
+
+Slide 87
+
+And that you will hit a breakpoint and get such view in a tool window with stack frames, variables, interactive console and controls for stepping.
+
+So let's sum it up. RubyMine debugger works out of the box. You don’t need to modify our code, deal with complicated commands in terminal or even configure anything. RubyMine Debugger starts just in one click and saves you a lot of time.
+
+Slide 88
+
+The next unique feature of RubyMine Debugger is smart stepping. There are several actions like step into, step out and step over. They allow you to effectively navigate through the code while debugging and increase your productivity.
+
+Let me show this feature on the example.
+
+Slide 89
+
+Here we have a class MyPrinter which contains three simple methods.
+
+At the bottom we have a chain of calls that contains four calls. Suppose we need to debug this chain.
+
+To do that we placed a breakpoint on line 18. We stopped on this breakpoint and start using stepping.
+
+Slide 90
+
+First let's call smart step into. Here RubyMine offers four options where we could step.
+
+Slide 91
+
+Let's choose second method - method "print_hello"
+
+Slide 92
+
+Ok, we stepped into method say_hello. Suppose that we checked this method and we need to go back. So we call step out and get back to our chain of call.
+
+Slide 93
+
+Now we are again on chain of call and we can use smart step into here again.
+
+Slide 94
+
+This time we have only two options to step into - methods "print_ruby_kaigi" and "print_bang".
+
+Slide 95
+
+Let's take first option and step into the method print_ruby_kaigi
+
+Slide 96
+
+We stepped into this method, and now we can use step over action to step inside the method.
+
+Slide 97
+
+Here we are right, finally let's get back to our original place once again. So we call step out.
+
+Slide 98
+
+And we reached our call of chain again. So I hope you got the idea. With smart stepping you can easily navigate through the regular methods and calls as well as through some tricky cases like we saw with call of chain. This feature is unique for RubyMine Debugger, and it helps you debug faster and increase your productivity.
+
+Slide 99
+
+We covered two features so far. Let’s move to the last feature that I would like to show. It is called Inline Value Debugger.
+
+Slide 100
+
+Suppose we have a sample method that takes two arguments and filters array in some way. Let's say that for some reason, we need to debug this method. We set a breakpoint on the line 4 and start debugger with one click.
+
+Slide 101
+
+We stopped on the breakpoint and at the bottom we have pretty common debugger panel with detailed information about variables and their values in current context. All seems pretty common. But there is a problem.
+
+Slide 102
+
+Usually, in the debugging process we need to go back and force to match variables in the editor with their actual values in this special panel. Sadly, it takes a lot of mind resources to keep them in mind and keep them consistent between stepping. So we need a way to simplify this process.
+
+Slide 103
+
+RubyMine provides inline debugger values to solve this problem. Here they are. They show actual values of variables right on the place where the variables are. It helps to debug you faster and work in more comfortable way. Such a feature will make your work more effective and helps you get things done with less resources.
+
+Slide 104-107
+
+Let's recap all things that we discussed.
+
+First of all we got that debugger uses tracepoints and instruction sequence to provide stepping and other essential debugger features.
+
+Secondly, we discussed that byebug works slow because of huge amount of breakpoint checks and debug gem solve this problem using TracePoint improvements.
+
+At the end we discussed RubyMine Debugger and its unique features. It works fast on all Ruby version using different branches of debugger gems.
+
+We noticed that RubyMine provides on-click debugger experience without additional actions. This features works with production Rails and Ruby applications.
+
+We noted that this debugger has smart stepping feature that streamlines debugging process and helps you solve issues faster.
+
+And finally we discussed inline debugger values that help you to work more efficiently and get your work done with less resources. makes debugging more comfortable.
+
+Slide 108
+
+That is all that I have for today. Reach me out on LinkedIn about any question related to RubyMine, follow this QR-code and try RubyMine Debugger for free. Together we make Ruby developer's life better! Thank you!

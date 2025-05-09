@@ -1,0 +1,1040 @@
+0:07
+y thank
+0:08
+you
+0:10
+well hello thank you for coming my name
+0:14
+is Dimitri pno I'm a team leader of Ruby
+0:18
+mind team in jet brains and today I will
+0:21
+talk about Ruby
+0:23
+debuggers we use rub bugers quite a lot
+0:26
+in our daily working process but pretty
+0:28
+few of us know how they work
+0:31
+internally in this talk I will cover
+0:34
+open source Ruby debuggers as well as
+0:36
+Ruby mind
+0:37
+debugger I've been working on Ruby mind
+0:39
+debugger for several years and also
+0:42
+investigated how open- Source Ruby
+0:44
+debuggers work today it's a chance for
+0:47
+me to share my experience and show you
+0:50
+main concept of Ruby just fix microphone
+0:53
+sorry Ruby debuggers thank
+0:56
+you um yep let's start
+1:00
+in this
+1:01
+talk I will answer five questions the
+1:04
+first one what tools do we have to find
+1:07
+bugs in rubby code then I will show you
+1:11
+what technologies do rubby buers use
+1:14
+after that we will see how do debuggers
+1:17
+work then I will show you which debugger
+1:20
+is the most performant and
+1:23
+finally uh we'll see how does the Ruby
+1:26
+mind debugger simplify debugging process
+1:31
+let's start from this first question
+1:34
+what tools do we have to find bus in
+1:36
+rubby
+1:37
+code and let's start from the simple
+1:40
+example here we have a method process
+1:43
+that takes one
+1:45
+argument and in this method we check
+1:48
+whether an argument has to string or
+1:51
+inspect
+1:52
+methods if it's true then we print
+1:54
+element is printable otherwise we print
+1:57
+element is not printable
+2:01
+and at the bottom we have two calls the
+2:05
+first is process of five that prin
+2:08
+element is printable and that is correct
+2:10
+because five has to string
+2:13
+method but the second call looks pretty
+2:17
+suspicious because process of basic
+2:19
+object wi's element is printable but in
+2:22
+fact basic object doesn't have to string
+2:25
+or inspect Methods at
+2:27
+all and apparently there is a bu
+2:31
+somewhere in this
+2:32
+code and I would like to ask you think
+2:36
+for a second and please raise your hand
+2:38
+if you know where the bu is in this
+2:42
+code don't worry I won't ask you about
+2:47
+that yeah yeah yeah well done yeah so
+2:51
+the real problem is here so this part
+2:56
+goes as an argument for defined method
+2:59
+and in that way method process prints
+3:02
+element is printable regardless of the
+3:04
+argument with any argument
+3:08
+possible we can fix this issue by adding
+3:11
+a couple of parentheses for the first
+3:13
+part of the if condition and after that
+3:17
+our output will be correct so now
+3:20
+process of basic object uh print element
+3:23
+is not
+3:26
+printable this was pretty basic example
+3:29
+is almost obvious bug but what tools
+3:33
+could we use to find real bugs in real
+3:35
+rubby
+3:37
+code the first thing that comes in mind
+3:40
+is putot
+3:41
+statement we can place several putot
+3:44
+statements to their suspicious place and
+3:47
+they will give us some hints about where
+3:49
+the problem is or what we need to do
+3:52
+next and also in the same way we can use
+3:56
+FS debugger gem that makes our out put
+4:00
+distinguishable between each
+4:03
+other and also you could use awesome
+4:05
+Prim Gems or similar ones just to make
+4:07
+our output more structured and easy to
+4:12
+read uh puts really great but they are
+4:17
+pretty basic we need something more
+4:20
+advanced and we have this tool we have
+4:24
+interactive console basically in Ruby we
+4:27
+have I and pry consoles
+4:30
+usually we need to place a special call
+4:33
+in our source code to make it work and
+4:36
+after that we will be able to introspect
+4:38
+their current context we will be able to
+4:40
+modify it and even evaluate some
+4:43
+Expressions but interactive consults has
+4:48
+one problem the lack of one important
+4:51
+feature and this feature is execution
+4:54
+control basically a stepping
+4:58
+feature and next tool
+5:01
+debuggers and rby debugger has all
+5:03
+necessary tools to find bugs in rubby
+5:06
+code and this is a most advanced tool
+5:08
+that we have in Ruby
+5:11
+world before we start with debuggers
+5:14
+let's think uh how often do developers
+5:18
+use a
+5:21
+debugger and the answer is here so every
+5:25
+thir run is a debak run basically 30 4%
+5:30
+of all runs are debug runs and this fact
+5:34
+is based on the anonymous studs from
+5:36
+Ruby mine version 202
+5:39
+24.2 and this fact means that debugging
+5:43
+process is a crucial part in our working
+5:47
+process we need to strive to make it
+5:49
+even better to make our to increase our
+5:54
+productivity and to get things done with
+5:56
+less
+5:57
+resources so that's why I'm here talking
+5:59
+about
+6:02
+debuggers let's move to the next
+6:04
+question and let me show you what
+6:06
+technologies dobers
+6:09
+use the first one is a trace Point Trace
+6:14
+point was introduced in Ruby 2.0 and it
+6:17
+mainly provides an ability to execute
+6:19
+some specific code on a certain event in
+6:22
+your code so it's basically provided a
+6:26
+way to trace your
+6:27
+code and Trace point1 works almost
+6:30
+everywhere it works in Threads it works
+6:32
+in fibers but it doesn't work in RoR yet
+6:37
+unfortunately hopefully it will be there
+6:40
+but unfortunately not
+6:43
+yet and let me show you an example how T
+6:46
+Point
+6:48
+Works uh here we have a method say hello
+6:51
+with a boots statement hello eura
+6:55
+2024 and also we have a trace point that
+6:58
+is targeted to call events in this Trace
+7:02
+point we have another good
+7:04
+statement and at the bottom we have a
+7:07
+call of our method and in commence we
+7:10
+have our output so first we have a
+7:14
+message from our Trace point and only
+7:16
+after that we have a message from our
+7:18
+method
+7:19
+itself and in this way Trace Point
+7:22
+traced our call by placing a additional
+7:28
+message having only Trace point we can
+7:31
+build a probably simplest possible
+7:34
+debugger the main difference from the
+7:37
+previous example is here
+7:40
+so this code in this code we take an
+7:44
+input from the user and we try to
+7:46
+evaluate it and print to the
+7:49
+console in that way we will be able to
+7:52
+introspect the context on each call
+7:54
+event so basically on each method
+7:57
+invocation and that's probably simplest
+8:00
+possible debug that we can ever create
+8:04
+and that's why Trace point is a crucial
+8:07
+part because without it it's not
+8:09
+possible to make it like
+8:12
+that let's move to the next uh
+8:15
+technology it is a ruby virtual machine
+8:18
+instruction
+8:20
+sequence instruction sequence is a
+8:23
+representation of compiled by code for a
+8:25
+ruby virtual
+8:26
+machine it depends on the Ruby version
+8:29
+because it's tightly related to virtual
+8:31
+machine
+8:33
+internals and it mainly provides an
+8:35
+access to lowlevel representation of
+8:37
+your rubby code with that technology you
+8:41
+can modify the bite code and adjust the
+8:43
+behavior of your program without
+8:45
+touching the source code of your
+8:48
+program let me show you an
+8:51
+example here we have the same method say
+8:55
+hello and then we take a method object
+8:59
+of this method and then we pass that
+9:02
+method object to instruction sequence at
+9:05
+the end we just PR our instruction
+9:07
+sequence to the console in some readable
+9:09
+way so let's take a look at the
+9:14
+output here it
+9:16
+is here we have several lines each line
+9:20
+is a separate
+9:23
+instruction also we have uh our argument
+9:27
+and we can read it right here without
+9:30
+any encoding or decoding problems it's
+9:34
+great and here is another
+9:36
+Point these marks and these marks show
+9:40
+events that will be emitted at the run
+9:43
+time uh pure Li stands for line event ca
+9:47
+for call event and re for return event
+9:51
+and in this way instru sequence
+9:54
+collaborates with the trace point
+9:56
+because Trace Point Targets on this
+10:01
+events that's basically about
+10:04
+Technologies for Ruby debuggers and
+10:08
+let's move to the next question how do
+10:10
+debuggers
+10:13
+work first I would like to start with
+10:15
+bubug debugger it's pretty well known it
+10:19
+provides all necessary features like
+10:21
+break points stepping and context
+10:24
+introspection it's default de buer for
+10:26
+old Ruby versions and old ra versions
+10:30
+also it requires modification to your
+10:32
+source code to make it work usually we
+10:35
+need to place a requir statement and I
+10:37
+call to make it work and additionally
+10:41
+this debugger provides common line
+10:43
+interface by default and there are
+10:46
+several PS code plugins to make it
+10:50
+work but how does buback
+10:54
+work let's figure
+10:57
+out here is a simple model of bubug
+11:01
+debugger all these code should be
+11:03
+invoked before the actual rubby
+11:05
+application that we are going to
+11:07
+debug and here on top we have two lists
+11:11
+the first list of breakpoints that
+11:14
+contains break points from the user and
+11:17
+the second list is list of Trace point
+11:20
+that contains uh one Trace Point per
+11:23
+each event type for example one Trace
+11:27
+point for line events one Trace point
+11:29
+for call events and so
+11:31
+on in each Trace point we have basically
+11:34
+the same
+11:36
+method uh in each Trace point we try to
+11:39
+find our break point at the certain
+11:42
+place if we find it then we move the
+11:46
+control to the user otherwise we just
+11:49
+continue our execution without any
+11:51
+additional
+11:52
+actions and that's fundamentally how it
+11:56
+works but this approach has one issue
+12:00
+and this issue is
+12:03
+performance the problem is that we do a
+12:06
+lot of checks to find our break point on
+12:09
+each event and that makes our code more
+12:12
+than 20 times slower than original run
+12:15
+without any
+12:17
+debugger this is a main disadvantage of
+12:19
+buyback debugger mainly because it's
+12:22
+could be hard to debug some complicated
+12:24
+Ruby or rails application uh with that
+12:27
+debugger
+12:30
+but next debugger debug gem solved this
+12:35
+problem but before we start with debug
+12:37
+gem um let the main feature that solved
+12:41
+this problem for debug
+12:43
+Gem and this feature is Trace Point
+12:47
+improvements Trace Point improvements
+12:49
+were introduced in Ruby 2.6 and it
+12:52
+mainly provides an ability to specify
+12:55
+Target line or I SEC for a trace point
+12:59
+with that Improvement you don't need to
+13:02
+do a lot of checks to find your break
+13:04
+point you can create your Trace point
+13:06
+and Target this Trace point to a certain
+13:09
+place where you have a break point for
+13:12
+sure and this approach works great
+13:15
+without any performance
+13:17
+issues let me show you an example how
+13:20
+this
+13:22
+works here we have uh two
+13:25
+methods say hello and Say Goodbye also
+13:29
+we have the same Trace Point as before
+13:32
+without any changes and the main point
+13:35
+is here here we target our Trace point
+13:39
+to the is SEC of the first
+13:42
+method and at the bottom we can see our
+13:45
+output so our Trace point was triggered
+13:49
+only once for the first method and was
+13:52
+ignored for the second one that's how it
+13:56
+works debug gem use set up approach uh
+14:00
+to solve performance issue and in fact
+14:03
+debug gem doesn't have any performance
+14:05
+issue which is
+14:07
+great also this debugger supports 3 2.7
+14:11
+and greater mainly because three point
+14:14
+wasn't ported to the previous
+14:17
+versions apart of that uh this debugger
+14:20
+supports several front ends like vort or
+14:23
+Chrome and finally this debugger bundle
+14:27
+in Ruby mine version .1 and
+14:30
+greater H and in fact this is a default
+14:34
+option for debugging your code for the
+14:35
+modern
+14:36
+Ruby especially if you don't have any
+14:39
+other
+14:40
+tools set it about debug Gem and let me
+14:44
+show you Ruby mine
+14:48
+debugger Ruby mine debugger is buled in
+14:51
+Ruby mine IDE with graphical user
+14:53
+interface by
+14:54
+default it provides seamless debugging
+14:57
+experience with this debugger you don't
+15:00
+need to modify your source code you
+15:02
+don't need to deal with some terminal
+15:04
+commands you don't need to configure
+15:07
+something it works out of the
+15:09
+box apart of that please deide your
+15:12
+supports rby 2.3 and greater so almost
+15:15
+all ruby versions that your application
+15:18
+could
+15:18
+use and with all these versions uh this
+15:22
+debugger doesn't have any performance
+15:24
+issues that's one of the main features
+15:29
+uh apart of that this debugger also has
+15:32
+an ability to attach to any Ruby process
+15:35
+so with this debugger you don't need to
+15:37
+start the debuger right from the start
+15:39
+you can attach it when really
+15:44
+needed but how is the pro mind debugger
+15:50
+structured here is the architecture of
+15:53
+Ruby mind debugger it contains three
+15:56
+components the first component is the
+15:59
+Bas Gem and it's mainly responsible for
+16:02
+lowlevel SC like ISC or frames
+16:06
+retrieving Trace Point creation and so
+16:09
+on the next component is prb ID gem this
+16:14
+component is main responsible for text
+16:17
+presentation of Ruby versions or of Ruby
+16:20
+values and for connection between Ruby
+16:22
+mine ID and
+16:23
+debugger and finally Ruby mine ID itself
+16:29
+this component is made responsible for
+16:31
+graphical user interface and user
+16:35
+experience generally architecture looks
+16:38
+like this but the real architecture is a
+16:42
+bit more
+16:43
+complicated instead of one uh branch of
+16:47
+gems we have two branches and the first
+16:50
+branch is targeted to all TR be it
+16:53
+contains a lot of lowlevel hacks to make
+16:55
+it
+16:56
+performant and it's really hard to
+16:58
+support and
+17:00
+maintain that's why we have second
+17:03
+Branch with uh that is targeted to
+17:06
+Modern Ruby it uses new Ruby
+17:10
+API it's much maintainable and it's easy
+17:13
+to add new features here that's why we
+17:16
+have two branches and this approach uh
+17:20
+makes our debugger maintainable and
+17:24
+manageable another aspect of Ruby mind
+17:26
+debugger is a question how how does
+17:29
+rubby mind connect to the
+17:33
+debugger suppose we need to debug multi
+17:36
+process Ruby application and this Ruby
+17:40
+application has two processes the main
+17:43
+process and child
+17:45
+process first uh PR mind starts the main
+17:48
+process and after that it connects using
+17:51
+default port to the main
+17:53
+process suppose after that main process
+17:57
+creates its child process and at this
+17:59
+point R needs to connect the child
+18:02
+process
+18:03
+too to achieve that uh child process
+18:07
+send a message with a new connection all
+18:10
+the way back to Ruby
+18:11
+mind and after that Ruby mind uses this
+18:16
+port to connect to the child
+18:19
+process and generally it works like R
+18:23
+mind connects to debugger not the vice
+18:26
+versa this approach works great in
+18:29
+almost all cases but there is one small
+18:33
+issues and the issue is related to doer
+18:37
+container environment because in doer
+18:39
+container we need to open all necessary
+18:42
+ports in advance but unfortunately we
+18:45
+can't predict how many ports arbitary
+18:48
+Ruby application will use and this is
+18:51
+the main
+18:53
+problem we solved that issue by opening
+18:56
+large number of ports in advance just to
+18:59
+provide a way for debugging almost any
+19:03
+Ruby application with do container but
+19:07
+this solution is not very elegant and
+19:09
+probably in future we can make even
+19:12
+better so that's my NE about how Ruby
+19:16
+debuggers work and let's see which
+19:19
+debugger is the most
+19:22
+performant to figure this out I created
+19:26
+simple experiment I I used Fibonacci
+19:30
+method and in this method I placed a
+19:33
+break point whenever hit this break
+19:36
+point and I need this break point just
+19:39
+to measure how a break point can affect
+19:42
+a debugger
+19:44
+performance also in this experiment I
+19:46
+use average uh metric of 100 R just to
+19:51
+make the results stable and
+19:55
+reproducible um in this experiment I
+19:59
+used all described versions and they
+20:02
+like all described debuggers and their
+20:04
+latest versions and for Ruby mine we
+20:06
+have two packs of gems the one pack was
+20:10
+for modern Ruby and another one for the
+20:13
+old
+20:14
+Ruby so let's take a look at the
+20:18
+results here they
+20:20
+are first I would like to highlight that
+20:24
+buyback gem really slow with old R it's
+20:28
+more than 20 times slower than original
+20:30
+run without any
+20:32
+debugger at the same turn Ruby mind
+20:34
+debugger Works fast without any
+20:37
+performance
+20:38
+issues and in fact Ruby mind debugger is
+20:41
+the only option to debug your code with
+20:44
+all trby without any performance issues
+20:47
+that's not really great because we don't
+20:49
+have different options to choose but
+20:52
+this what we have
+20:54
+here for the mod Ruby we have better
+20:57
+case they have debug Gem and rby mind
+21:00
+debugger they are both works on the same
+21:03
+level without any performance issue and
+21:06
+for the mod Ruby we have an option to
+21:09
+choose what we can use for each
+21:13
+case set main it about debugger
+21:16
+performance and let's move to the last
+21:19
+question how does rub debugger
+21:22
+simplified debuging
+21:24
+process generally Ruby mind debuger has
+21:27
+a lot of great features that could
+21:29
+streamline your debugging process but I
+21:31
+would like to highlight just a couple of
+21:33
+them and the first one is debug rails
+21:37
+application in one
+21:39
+click suppose we need to debug rails
+21:43
+application and this ra application
+21:46
+based on the uh Puma server here we can
+21:51
+see Puma config file and here we have
+21:55
+five threads and two workers it means
+21:57
+that our r application is multiprocess
+22:02
+application and suppose we need to debug
+22:04
+it uh let's say we need to debug method
+22:07
+home in our
+22:09
+controller and first we need to place a
+22:12
+breakpoint by one click on the
+22:15
+gapter and all we need after that is
+22:19
+just to click on the debug button and
+22:21
+that's it we don't need to modify our
+22:24
+source code we don't need to configure
+22:26
+something it works out of the box
+22:28
+without any additional
+22:30
+actions after that debugger process will
+22:33
+start and we will be able to hit our
+22:35
+break
+22:36
+points and this view we will see when we
+22:39
+hit a break point here we have a list of
+22:44
+frames special panel with variables and
+22:47
+values
+22:49
+and interactive console and other uh
+22:53
+important things for debugging process
+22:58
+that's main it about this
+23:00
+feature another feature is inline
+23:03
+divider
+23:04
+values suppose we have a method and it's
+23:09
+filter array it contains it takes two
+23:12
+arguments the first argument is list of
+23:14
+numbers the second argument is just a
+23:17
+number and for some reason we need to
+23:20
+debug this method so we have a break
+23:23
+point on the line
+23:25
+four suppose we start our debugger and
+23:28
+stop on the breakpoint and this view we
+23:31
+will
+23:33
+see um here we have a panel with
+23:36
+variables and their values and usually
+23:39
+in debugging process we need to match
+23:42
+variables in our editor with values in
+23:45
+with in this special panel so we need to
+23:48
+go back and forth to make this map in
+23:50
+our mind and it takes a lot of Mind
+23:53
+resources to keep it in mind and keep it
+23:56
+consistent um provides simpler solution
+24:00
+for this and rubby mind provides these
+24:04
+annotations WR in the editor they show
+24:07
+variables and their values right in the
+24:10
+editor near the place where you use
+24:13
+variable and uh this feature can
+24:18
+streamline your debugging process and
+24:20
+save your mind resources that's great I
+24:23
+guess that's it so let's move to the key
+24:27
+points
+24:28
+first I would like to highlight that
+24:30
+Ruby debuggers use Trace point and
+24:33
+instruction
+24:35
+sequence also I would like to emphasize
+24:38
+that debuger debug gem Works fast due to
+24:41
+trace Point
+24:42
+improvements and finally Ruby mind
+24:45
+debugger it works fast with all
+24:48
+supported Ruby versions it enables one
+24:51
+click debugging process for rail for
+24:54
+rails application and basically for Ruby
+24:56
+application too
+24:58
+and it provides in led by your values to
+25:00
+help you Deb back with pleasure that's
+25:03
+it thank
+25:04
+[Applause]
+25:14
+you lastly I would like to ask you take
+25:17
+your phones and scan this C code please
+25:20
+share your feedback about and rby minder
+25:24
+with me on LinkedIn it will be pleasure
+25:26
+to see your feedback together we can can
+25:28
+make our rubby tools even better thank
+25:31
+you
+25:32
+[Applause]
